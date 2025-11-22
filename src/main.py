@@ -1,13 +1,13 @@
 import sys
-from bootstrap.app import create_app
+from bootstrap.container import create_app
 
 
 def main() -> None:
-    """Application entrypoint."""
-    app = create_app()  # bygg app och DI-container här
-
+    """Application entrypoint."""    
     try:
+        app = create_app()
         app.run()
+        
     except KeyboardInterrupt:
         app.logger.info("Interrupted by user. Exiting.")
         sys.exit(0)
