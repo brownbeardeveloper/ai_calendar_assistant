@@ -1,6 +1,5 @@
 # app.py
 
-import traceback
 import asyncio
 from textual.app import App
 from textual.containers import Horizontal, Vertical
@@ -8,12 +7,6 @@ from textual.widgets import Header, Footer, Input, Static
 from textual.binding import Binding
 from datetime import datetime
 from typing import List, Dict, Any
-
-from calendar_assistant.ui.widgets.message import MessageWidget
-from calendar_assistant.ui.widgets.event_list import EventList
-from calendar_assistant.ui.widgets.calendar_display import CalendarDisplay
-from calendar_assistant.ui.widgets.css import CSS
-
 
 class CalendarApp(App):
     """Main application class for the Calendar Assistant UI."""
@@ -33,8 +26,8 @@ class CalendarApp(App):
         """Initialize UI and apply theme."""
         try:
             self.query_one("#chat-input").focus()
-        except Exception as e:
-            print(f"Error focusing input: {e}")
+        except Exception:
+            pass
 
     async def on_ready(self):
         """App is ready — load data."""
@@ -72,10 +65,7 @@ class CalendarApp(App):
             # Initialize chat area
             chat_container = self.query_one("#chat-container")
             chat_container.scroll_end(animate=False)
-
-        except Exception as e:
-            print(f"Error loading calendar events: {e}")
-            traceback.print_exc()
+        except Exception:
             self.events = []
 
     def _update_ui_with_events(self, upcoming_events_for_list: List[Dict[str, Any]]):
@@ -87,10 +77,8 @@ class CalendarApp(App):
             event_list = self.query_one(EventList)
             if event_list:
                 event_list.update_events(upcoming_events_for_list)
-
-        except Exception as e:
-            print(f"Error updating UI with events: {e}")
-            traceback.print_exc()
+        except Exception:
+            pass
 
     def compose(self):
         """Define the layout."""
@@ -171,7 +159,6 @@ class CalendarApp(App):
             await self.load_events()
 
         except Exception as e:
-            traceback.print_exc()
             # Show error message in chat
             error_msg = MessageWidget(
                 "Assistant", f"Sorry, I encountered an error: {str(e)}"

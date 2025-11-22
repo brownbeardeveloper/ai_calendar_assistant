@@ -1,12 +1,10 @@
 from datetime import datetime, timedelta
 from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
-from langchain.agents import AgentExecutor
-from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
-from langchain_core.messages import SystemMessage
+from langchain.agents import create_agent
 
 from calendar_assistant.models.google_calendar_model import GoogleCalendarModel
-from calendar_assistant.prompts.agent_prompts import get_prompt
+from calendar_assistant.prompts.agent_prompts import SUPERVISOR_SYSTEM_PROMPT
 
 
 class SupervisorModel:
@@ -93,9 +91,8 @@ class SupervisorModel:
                         start_date=day_start.isoformat(),
                         end_date=day_end.isoformat(),
                     )
-                except Exception as e:
+                except Exception:
                     # If we can't get events for conflict check, proceed with creation
-                    print(f"Warning: Could not check for conflicts: {e}")
                     existing_events = []
 
                 conflicts = []
@@ -135,16 +132,16 @@ class SupervisorModel:
                 # If conflicts detected, return warning with options
                 if conflicts:
                     conflict_list = "\n".join(conflicts)
-                    return f"""⚠️ TIME CONFLICT DETECTED ⚠️
-You already have {len(conflicts)} event(s) during the requested time:
-{conflict_list}
+                    return f"""TIME CONFLICT DETECTED:
+                            You already have {len(conflicts)} event(s) during the requested time:
+                            {conflict_list}
 
-Options:
-1. RESCHEDULE: Choose a different time  
-2. FORCE CREATE: Create anyway (overlapping events)
-3. CANCEL: Don't create the event
+                            Options:
+                            1. RESCHEDULE: Choose a different time  
+                            2. FORCE CREATE: Create anyway (overlapping events)
+                            3. CANCEL: Don't create the event
 
-Please specify your choice or provide a new time."""
+                            Please specify your choice or provide a new time."""
 
                 # No conflicts, proceed with creation
                 created_event = gcal_model.create_event(event_data=event_data)
@@ -162,7 +159,7 @@ Please specify your choice or provide a new time."""
                         if created_event.get("location")
                         else ""
                     )
-                    return f"✅ Successfully created Google Calendar event: '{created_event['title']}' from {start_dt_confirm.strftime('%Y-%m-%d %H:%M %Z')} to {end_dt_confirm.strftime('%H:%M %Z')}{loc_confirm}."
+                    return f"Successfully created Google Calendar event: '{created_event['title']}' from {start_dt_confirm.strftime('%Y-%m-%d %H:%M %Z')} to {end_dt_confirm.strftime('%H:%M %Z')}{loc_confirm}."
                 else:
                     return "Error: Failed to create Google Calendar event. No event data returned."
 
@@ -225,7 +222,7 @@ Please specify your choice or provide a new time."""
                         if created_event.get("location")
                         else ""
                     )
-                    return f"✅ FORCE CREATED Google Calendar event: '{created_event['title']}' from {start_dt_confirm.strftime('%Y-%m-%d %H:%M %Z')} to {end_dt_confirm.strftime('%H:%M %Z')}{loc_confirm}. (Overlapping events allowed)"
+                    return f"FORCE CREATED Google Calendar event: '{created_event['title']}' from {start_dt_confirm.strftime('%Y-%m-%d %H:%M %Z')} to {end_dt_confirm.strftime('%H:%M %Z')}{loc_confirm}. (Overlapping events allowed)"
                 else:
                     return "Error: Failed to create Google Calendar event. No event data returned."
 
@@ -638,31 +635,22 @@ Please specify your choice or provide a new time."""
         """Initialize the LLM model and agent executor."""
         try:
             self.model = ChatOpenAI(model=self.model_name, temperature=0)
-        except Exception as e:
-            print(f"Error initializing ChatOpenAI: {e}")
+        except Exception:
             self.model = None
             return
 
         if not self.model:
-            print("ChatOpenAI model could not be initialized. Agent setup aborted.")
             return
 
         tools = self._get_tools()
-        system_message_content = get_prompt("supervisor_google_calendar")
-        if not system_message_content:
-            print("Error: Supervisor prompt could not be loaded. Agent setup aborted.")
-            self.agent_executor = None
-            return
-
-        system_message = SystemMessage(content=system_message_content)
 
         try:
-            agent = OpenAIFunctionsAgent.from_llm_and_tools(
-                llm=self.model, tools=tools, system_message=system_message
+            self.agent_executor = create_agent(
+                self.model, 
+                tools, 
+                system_prompt=SUPERVISOR_SYSTEM_PROMPT
             )
-            self.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-        except Exception as e:
-            print(f"Error creating agent executor: {e}")
+        except Exception:
             self.agent_executor = None
 
     async def process_message(self, user_input: str) -> str:
@@ -680,6 +668,10 @@ Please specify your choice or provide a new time."""
             local_tz_offset = now.strftime("%z")
 
             contextual_input = f"""
+
+                                System prompt:
+                                {SUPERVISOR_SYSTEM_PROMPT}
+
                                 Current date and time context:
                                 - Today is: {current_date_str}
                                 - Current time: {current_time_str} {current_timezone}
@@ -700,8 +692,19 @@ Please specify your choice or provide a new time."""
                                 Please interpret any relative date/time references (like "today", "yesterday", "tomorrow", "next week", etc.) based on the current date provided above.
                                 """
 
-            result = await self.agent_executor.ainvoke({"input": contextual_input})
-            return result.get("output", "No output from agent.")
+            # LangGraph agent expects messages format
+            from langchain_core.messages import HumanMessage
+            
+            result = await self.agent_executor.ainvoke(
+                {"messages": [HumanMessage(content=contextual_input)]}
+            )
+            
+            # Extract the final response from the messages
+            if "messages" in result and len(result["messages"]) > 0:
+                # Get the last AI message
+                last_message = result["messages"][-1]
+                return last_message.content if hasattr(last_message, "content") else str(last_message)
+            
+            return "No output from agent."
         except Exception as e:
-            print(f"Error during agent processing: {e}")
             return f"I encountered an issue processing your request: {str(e)}"

@@ -20,23 +20,18 @@ class EventList(VerticalScroll):
         self.title = title
         self.events = []
         self.event_widgets = []
-        print(f"EventList initialized with title: {title}")
 
     def compose(self):
         """Compose the widget layout."""
-        print("EventList.compose() called")
-        # Empty layout initially
         yield Static("Loading events...", id="loading-message")
 
     def on_mount(self):
         """Handle the widget mount event."""
-        print(f"EventList.on_mount() called, setting title to: {self.title}")
         self.border_title = self.title
 
     def update_events(self, events):
         """Update the displayed events."""
         try:
-            print(f"EventList.update_events() called with {len(events)} events")
             self.events = sorted(events, key=lambda e: e.get("start_time", ""))
 
             # Remove all existing widgets
@@ -49,9 +44,8 @@ class EventList(VerticalScroll):
                 loading = self.query_one("#loading-message")
                 if loading:
                     loading.remove()
-                    print("Removed loading message")
-            except Exception as e:
-                print(f"Could not remove loading message: {e}")
+            except Exception:
+                pass
 
             # If no events, show a message
             if not self.events:
@@ -61,16 +55,13 @@ class EventList(VerticalScroll):
                 return
 
             # Create a static widget for each event
-            print(f"Adding {len(self.events)} events to EventList")
             for i, event in enumerate(self.events):
                 try:
                     event_widget = self._create_event_widget(event, i)
                     self.mount(event_widget)
                     self.event_widgets.append(event_widget)
-                    print(f"Added event widget {i + 1}: {event.get('title')}")
-                except Exception as e:
-                    print(f"Error adding event widget: {e}")
-                    error_widget = Static(f"Error: {str(e)}", classes="error")
+                except Exception:
+                    error_widget = Static("Error loading event", classes="error")
                     self.mount(error_widget)
                     self.event_widgets.append(error_widget)
 
@@ -78,15 +69,8 @@ class EventList(VerticalScroll):
             spacer = Static("", classes="spacer")
             self.mount(spacer)
             self.event_widgets.append(spacer)
-
-        except Exception as e:
-            print(f"Error updating events in EventList: {e}")
-            import traceback
-
-            traceback.print_exc()
-            error_widget = Static(f"ERROR: {str(e)}", classes="error")
-            self.mount(error_widget)
-            self.event_widgets.append(error_widget)
+        except Exception:
+            pass
 
     def _create_event_widget(self, event, index):
         """Create a static widget for an event."""
