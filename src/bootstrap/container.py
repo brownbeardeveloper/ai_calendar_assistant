@@ -1,8 +1,8 @@
 import logging
-from src.services.event_service import EventService
-from src.services.llm_service import LLMService
-from src.controller.app_controller import AppController
-from src.view.app import CalendarApp
+from services.event_service import EventService
+from services.llm_service import LLMService
+from controller.app_controller import AppController
+from view.app import CalendarApp
 from typing import NamedTuple
 
 class Container(NamedTuple):
