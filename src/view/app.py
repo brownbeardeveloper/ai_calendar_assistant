@@ -7,6 +7,10 @@ from textual.widgets import Header, Footer, Input, Static
 from textual.binding import Binding
 from datetime import datetime
 from typing import List, Dict, Any
+from view.widgets.css import CSS
+from view.widgets.calendar_display import CalendarDisplay
+from view.widgets.event_list import EventList
+from view.widgets.message import MessageWidget
 
 class CalendarApp(App):
     """Main application class for the Calendar Assistant UI."""

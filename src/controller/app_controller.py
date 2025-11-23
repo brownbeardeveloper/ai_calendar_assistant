@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from src.models.event_service import EventService
-from src.models.llm_service import LLMService
-from src.models.logger import Logger
+from datetime import datetime
+from services.event_service import EventService
+from services.llm_service import LLMService
+from utils.logger import Logger
 from enum import Enum
 
 class Action(Enum):
@@ -53,13 +54,13 @@ class AppController:
             self.logger.info(f"{current_datetime} - LLM response: {intent}\n\n")
 
         if intent.action is Action.CREATE:
-            return self._create_event(intent.payload)
+            return self.event_service.create_event(intent.payload)
 
         if intent.action is Action.LIST:
-            return self._list_events()
+            return self.event_service.get_events()
 
         if intent.action is Action.DELETE:
-            return self._delete_event(intent.payload)
+            return self.event_service.delete_event(intent.payload)
 
         if intent.action is Action.MISSING:
             return intent.message
@@ -68,3 +69,9 @@ class AppController:
             self.logger.error(f"{current_datetime} - The LLM returned {intent.action} {intent.payload} {intent.message}")
 
         return f"Invalid intent: {intent.action} is not a valid action."
+
+
+if __name__ == "__main__":
+    app_controller = AppController(EventService(), LLMService(), Logger())
+    print(app_controller.handle_user_message("Hello"))
+    
