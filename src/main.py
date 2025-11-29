@@ -11,6 +11,7 @@ def main() -> None:
     except KeyboardInterrupt:
         app.logger.info("Interrupted by user. Exiting.")
         sys.exit(0)
+        
     except Exception:
         app.logger.exception("Unhandled application error.")
         sys.exit(1)

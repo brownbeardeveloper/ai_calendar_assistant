@@ -1,7 +1,6 @@
-import os
 from openai import OpenAI
-import json
-import dotenv
+from datetime import datetime
+import json, os, dotenv
 
 dotenv.load_dotenv()
 
@@ -17,20 +16,28 @@ class LLMService:
     def __init__(self, model_name="gpt-4o-mini") -> None:
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.model_name = model_name
-        self.system_prompt = (
-            "Extract intent and entities. Return JSON:\n"
-            "{intent: string, entities: object}"
+        self.system_prompt = "Extract intent and entities. Return JSON."
+
+    def parse_intent(self, message: str, current_datetime: datetime = None, history=None) -> dict:
+        
+        if current_datetime is None:
+            current_datetime = datetime.now()
+
+        if history is None:
+            history = []
+
+        msgs = [{"role": "system", "content": self.system_prompt}]
+
+        for item in history:
+            msgs.append({"role": item["role"], "content": item["content"]})
+
+        msgs.append({"role": "user", "content": message})
+
+        resp = self.client.chat.completions.create(
+            model=self.model_name,
+            messages=msgs,
+            response_format={"type": "json_object"},
         )
 
-    def parse_intent(self, message: str) -> dict:
-        response = self.client.chat.completions.create(
-            model=self.model_name,
-            messages=[
-                {"role": "system", "content": self.system_prompt},
-                {"role": "user", "content": message}
-            ],
-            response_format={"type": "json_object"}
-        )
-        
-        content = response.choices[0].message.content
+        content = resp.choices[0].message.content
         return json.loads(content)

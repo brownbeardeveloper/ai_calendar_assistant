@@ -3,13 +3,13 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import List, Optional
 from google.auth.transport.requests import Request
+from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
-
 
 @dataclass
 class CalendarEvent:
@@ -19,8 +19,8 @@ class CalendarEvent:
     end_time: str
     description: str
     location: str
-    attendees: list[str]
-    event_id: Optional[str]
+    attendees: Optional[list[str]] = None
+    event_id: Optional[str] = None
 
 
 class EventService:
@@ -59,12 +59,16 @@ class EventService:
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
+                try:
+                    creds.refresh(Request())
+                except RefreshError:
+                    creds = None
+
+            if not creds or not creds.valid:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                "credentials.json", SCOPES
-            )
-            creds = flow.run_local_server(port=0)
+                    "credentials.json", SCOPES
+                )
+                creds = flow.run_local_server(port=0)
             
             # Save the credentials for the next run
             with open("token.json", "w") as token:
@@ -72,7 +76,7 @@ class EventService:
         
         return build("calendar", "v3", credentials=creds)
 
-    def create_event(self, event: CalendarEvent, calendar_id: str="primary") -> CalendarEvent:
+    def create_event(self, event: CalendarEvent, calendar_id: str="primary") -> dict: # todo: returns what?
         """
         Create a new calendar event.
         
