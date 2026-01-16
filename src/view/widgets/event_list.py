@@ -1,8 +1,3 @@
-"""
-Event list widget for the Calendar Assistant UI.
-Uses Static widgets with panels for reliable display of calendar events.
-"""
-
 from textual.widgets import Static
 from textual.containers import VerticalScroll
 from rich.panel import Panel
@@ -10,6 +5,8 @@ from rich.text import Text
 from datetime import datetime
 from typing import Optional
 
+
+###################################### GOING TO UPDATE BELOW ##############################################
 
 class EventList(VerticalScroll):
     """Widget for displaying calendar events using direct Static widgets."""

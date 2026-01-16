@@ -1,6 +1,6 @@
 import os
-from dataclasses import dataclass
 from datetime import datetime, timedelta
+from dataclasses import dataclass
 from typing import List, Optional
 from google.auth.transport.requests import Request
 from google.auth.exceptions import RefreshError
@@ -76,7 +76,7 @@ class EventService:
         
         return build("calendar", "v3", credentials=creds)
 
-    def create_event(self, event: CalendarEvent, calendar_id: str="primary") -> dict: # todo: returns what?
+    def create_event(self, event: CalendarEvent, calendar_id: str="primary") -> dict:
         """
         Create a new calendar event.
         
@@ -179,10 +179,28 @@ class EventService:
         Returns:
             dict: The event in Google Calendar API format.
         """
+        # Ensure start_time is timezone aware, defaulting to local system time if naive
+        try:
+            start_dt = datetime.fromisoformat(event.start_time)
+            if start_dt.tzinfo is None:
+                start_dt = start_dt.astimezone()
+            start_val = start_dt.isoformat()
+        except ValueError:
+            start_val = event.start_time
+
+        # Ensure end_time is timezone aware, defaulting to local system time if naive
+        try:
+            end_dt = datetime.fromisoformat(event.end_time)
+            if end_dt.tzinfo is None:
+                end_dt = end_dt.astimezone()
+            end_val = end_dt.isoformat()
+        except ValueError:
+            end_val = event.end_time
+
         google_event = {
             "summary": event.title,
-            "start": {"dateTime": event.start_time, "timeZone": "UTC"},
-            "end": {"dateTime": event.end_time, "timeZone": "UTC"},
+            "start": {"dateTime": start_val},
+            "end": {"dateTime": end_val},
         }
         
         if event.description:
@@ -192,7 +210,7 @@ class EventService:
         if event.attendees:
             google_event["attendees"] = [
                 {"email": email.strip()} 
-                for email in event.attendees.split(",") 
+                for email in event.attendees 
                 if email.strip()
             ]
         
@@ -211,10 +229,10 @@ class EventService:
         start_time = google_event.get("start", {}).get("dateTime", "")
         end_time = google_event.get("end", {}).get("dateTime", "")
         
-        attendees = ", ".join([
+        attendees = [
             attendee.get("email", "")
             for attendee in google_event.get("attendees", [])
-        ])
+        ]
         
         return CalendarEvent(
             title=google_event.get("summary", ""),

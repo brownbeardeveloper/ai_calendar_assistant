@@ -1,44 +1,46 @@
-"""
-CSS styles for the Calendar Assistant UI.
-"""
+$primary: #4a90e2;
+$primary-darken-1: #3a6fb3;
+$surface: #1e1e1e;
+$surface-darken-1: #171717;
+$panel: #2a2a2a;
+$text: #ffffff;
+$warning: #ffcc00;
+$error: #ff4444;
 
-CSS = """
-#chat-section, #calendar-section {
+#chat-section,
+#calendar-section {
     width: 1fr;
     height: 100%;
 }
 
 .column {
-    padding: 1;
+    padding: 1 1;
     height: 100%;
 }
 
 #chat-container {
     height: 1fr;
     overflow-y: auto;
-    padding: 1;
-    border: solid $primary;
-    border-top: solid $primary;
-    border-right: solid $primary;
-    border-left: solid $primary;
+    padding: 1 1;
+    border: heavy $primary;
     border-bottom: none;
 }
 
 #chat-input {
     height: 3;
     margin: 0 1;
-    border: solid $primary;
+    border: heavy $primary;
 }
 
 CalendarDisplay {
-    height: 60%;
-    border: solid $primary;
+    height: auto;
+    border: heavy $primary;
     margin: 0 0 1 0;
 }
 
 EventList {
-    height: 40%;
-    border: solid $primary;
+    height: 1fr;
+    border: heavy $primary;
     overflow: auto;
     padding-bottom: 1;
 }
@@ -49,20 +51,20 @@ ListView {
     overflow: auto;
     height: 100%;
     border: none;
-    padding: 1;
-    margin: 1;
+    padding: 1 1;
+    margin: 1 1;
 }
 
 ListItem {
-    padding: 1;
+    padding: 1 1;
     background: $panel;
     color: $text;
     margin-bottom: 1;
-    border: solid $primary-darken-1;
+    border: heavy $primary-darken-1;
 }
 
 .event-item {
-    margin: 1 1 1 1;
+    margin: 1 1;
     padding: 0;
     background: $surface;
 }
@@ -71,46 +73,31 @@ ListItem {
     text-align: center;
     text-style: bold;
     color: $error;
-    margin: 2;
-    padding: 2;
+    margin: 2 2;
+    padding: 2 2;
 }
 
 #loading-message {
     color: $warning;
     background: $surface;
-    margin: 1;
-    padding: 1;
+    margin: 1 1;
+    padding: 1 1;
     text-align: center;
 }
 
 .error {
     color: $error;
     background: $surface-darken-1;
-    margin: 1;
-    padding: 1;
+    margin: 1 1;
+    padding: 1 1;
     text-align: center;
-    border: solid $error;
+    border: heavy $error;
 }
 
 .spacer {
     height: 1;
 }
 
-#debug-text {
-    background: $warning;
-    color: $text;
-    padding: 1;
-    margin: 1;
-    text-align: center;
-    height: auto;
-}
-
-.debug-text {
-    background: $warning;
-    color: $text;
-}
-
-/* Message styling */
 .message {
     display: block;
     width: 100%;
@@ -119,11 +106,10 @@ ListItem {
     margin-bottom: 1;
 }
 
-.user {
-    align-horizontal: right;
+.align-right {
+    content-align: right middle;
 }
 
-.assistant {
-    align-horizontal: left;
+.align-left {
+    content-align: left middle;
 }
-"""
