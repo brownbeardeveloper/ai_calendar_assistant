@@ -11,11 +11,10 @@ class SupervisorModel:
     """
     Handles the initialization and management of the AI agent for Google Calendar operations.
     """
-
     def __init__(
         self,
         google_calendar_model: GoogleCalendarModel,
-        model_name: str = "gpt-4.1-nano",
+        model_name: str = "gpt-5.2-mini",
     ):
         self.google_calendar_model = google_calendar_model
         self.model_name = model_name

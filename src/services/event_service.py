@@ -53,8 +53,8 @@ class EventService:
         # created automatically when the authorization flow completes for the first
         # time.
 
-        if os.path.exists("token.json"):
-            creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+        if os.path.exists(self.token_file):
+            creds = Credentials.from_authorized_user_file(self.token_file, SCOPES)
 
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
@@ -66,12 +66,12 @@ class EventService:
 
             if not creds or not creds.valid:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    "credentials.json", SCOPES
+                    self.credentials_file, SCOPES
                 )
                 creds = flow.run_local_server(port=0)
             
             # Save the credentials for the next run
-            with open("token.json", "w") as token:
+            with open(self.token_file, "w") as token:
                 token.write(creds.to_json())
         
         return build("calendar", "v3", credentials=creds)

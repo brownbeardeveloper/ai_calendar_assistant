@@ -1,19 +1,26 @@
-import sys
+import sys, traceback
 from bootstrap.container import create_app
+from dotenv import load_dotenv
 
+load_dotenv()
 
 def main() -> None:
     """Application entrypoint."""    
+    app = None
     try:
         app = create_app()
         app.run()
         
     except KeyboardInterrupt:
-        app.logger.info("Interrupted by user. Exiting.")
+        if app:
+            app.logger.info("Interrupted by user. Exiting.")
         sys.exit(0)
         
     except Exception:
-        app.logger.exception("Unhandled application error.")
+        if app:
+            app.logger.exception("Unhandled application error.")
+        else:
+            traceback.print_exc()
         sys.exit(1)
 
 

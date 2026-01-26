@@ -1,28 +1,59 @@
-import logging
+import os
+from functools import cached_property
+from pathlib import Path
+from typing import Optional
+
+from controller.app_controller import AppController
 from services.event_service import EventService
 from services.llm_service import LLMService
-from controller.app_controller import AppController
-from view.app import CalendarApp
 from utils.logger import Logger
-from typing import NamedTuple
-
-class Container(NamedTuple):
-    event_service: EventService
-    llm_service: LLMService
-    controller: AppController
+from view.app import CalendarApp
 
 
-def build_container() -> Container:
-    """Build the dependency graph for the application"""
-    event_service = EventService()
-    llm_service = LLMService()
-    logger = Logger()
-    controller = AppController(event_service=event_service, llm_service=llm_service, logger=logger)
-    return Container(event_service=event_service, llm_service=llm_service, controller=controller)
+class Container:
+    """
+    Dependency container that lazily creates and caches all core application services and wires them together.
+    """
+    @cached_property
+    def root_path(self) -> Path:
+        """Resolve the project root path."""
+        if "APP_ROOT" not in os.environ:
+            raise ValueError("APP_ROOT environment variable is not set")
+        return Path(os.environ["APP_ROOT"])
+
+    @cached_property
+    def credentials_file(self) -> str:
+        return str(self.root_path / "credentials.json")
+
+    @cached_property
+    def token_file(self) -> str:
+        return str(self.root_path / "token.json")
+
+    @cached_property
+    def logger(self) -> Logger:
+        return Logger()
+
+    @cached_property
+    def event_service(self) -> EventService:
+        return EventService(
+            credentials_file=self.credentials_file,
+            token_file=self.token_file
+        )
+
+    @cached_property
+    def llm_service(self) -> LLMService:
+        return LLMService()
+
+    @cached_property
+    def controller(self) -> AppController:
+        return AppController(
+            event_service=self.event_service,
+            llm_service=self.llm_service,
+            logger=self.logger
+        )
 
 
 def create_app() -> CalendarApp:
-    """Create the application and return the app"""
-    container = build_container()
-    controller = container.controller
-    return CalendarApp(controller=controller)
+    """Factory function to create the application with dependencies wired."""
+    container = Container()
+    return CalendarApp(controller=container.controller)
